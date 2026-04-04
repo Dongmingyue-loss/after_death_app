@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>死后呢？- 后事规划工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            padding-bottom: 70px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0 8px;
+            color: #999;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .nav-item.active {
+            color: #2C3E50;
+            font-weight: 500;
+        }
+
+        .nav-icon {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .page {
+            display: none;
+            padding: 16px;
+            padding-bottom: 20px;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 待办项核心样式修改 */
+        .todo-item {
+            display: flex;
+            flex-direction: column;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .todo-item-main {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .todo-item input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .todo-text {
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .todo-text.done {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+
+        .delete-todo {
+            color: #ff4444;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+
+        /* 新增：待办记事本样式 */
+        .todo-note-toggle {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 8px;
+            color: #666;
+            margin-right: 4px;
+            transition: 0.2s;
+        }
+        .todo-note-toggle:hover {
+            color: #2C3E50;
+        }
+        .todo-note-wrapper {
+            display: none;
+            margin: 8px 0 8px 34px;
+            width: calc(100% - 34px);
+        }
+        .todo-note-wrapper.active {
+            display: block;
+        }
+        .todo-note-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            background: #fdfbf7;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .todo-note-textarea:focus {
+            outline: none;
+            border-color: #2C3E50;
+            background: #fff;
+        }
+
+        .btn-add {
+            background: #2C3E50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .btn-edit-green {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .btn-save {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-photo {
+            background: #9b59b6;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 12px;
+            width: 100%;
+        }
+
+        .btn-lock {
+            background: #e67e22;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        textarea, input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .category-tab {
+            background: #e0e0e0;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .category-tab.active {
+            background: #2C3E50;
+            color: white;
+        }
+
+        .lock-icon {
+            font-size: 12px;
+            margin-left: 4px;
+        }
+
+        .emergency-display {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+        }
+        /* 急救卡标题红色 */
+        .emergency-display h2 {
+            color: #e74c3c;
+        }
+        .emergency-section {
+            margin-bottom: 24px;
+        }
+        .emergency-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #2C3E50;
+            color: #2C3E50;
+        }
+        .emergency-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .emergency-label {
+            width: 110px;
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+        }
+        .emergency-value {
+            flex: 1;
+            font-size: 18px;
+            word-break: break-word;
+            color: #111;
+        }
+        .emergency-contact-item {
+            margin-bottom: 8px;
+        }
+        .warning-banner {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 20px;
+            font-weight: 500;
+        }
+        .will-text {
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        .lock-overlay {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+        }
+        .lock-overlay button {
+            margin-top: 16px;
+            background: #2C3E50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .modal-body {
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .modal-footer {
+            padding: 16px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .contact-group {
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .contact-remove {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        .btn-add-contact {
+            background: #2C3E50;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="bottom-nav">
+    <div class="nav-item" data-page="memo">
+        <span class="nav-icon">📝</span>
+        <span>备忘录</span>
+    </div>
+    <div class="nav-item" data-page="will">
+        <span class="nav-icon">📄</span>
+        <span>遗嘱</span>
+    </div>
+    <div class="nav-item" data-page="emergency">
+        <span class="nav-icon">🚑</span>
+        <span>急救卡</span>
+    </div>
+</div>
+
+<!-- 备忘录页面 -->
+<div id="memo" class="page active">
+    <div class="category-tabs" id="categoryTabs"></div>
+    <div class="card" id="memoCard">
+        <div class="card-title">
+            <span>待办清单</span>
+            <div>
+                <button class="btn-add" id="addTodoBtn" style="display:none;" onclick="addTodoItem()">+ 添加</button>
+                <button class="btn-lock" id="changePwdBtn" style="display:none;" onclick="changeSecretPassword()">🔐 修改密码</button>
+            </div>
+        </div>
+        <div id="todoList"></div>
+    </div>
+    <div class="card">
+        <div class="card-title">
+            <span>备注</span>
+            <button class="btn-edit" id="editNotesBtn" style="display:none;" onclick="editNotes()">编辑</button>
+        </div>
+        <div id="notesDisplay" style="padding: 8px 0; color: #555;"></div>
+    </div>
+</div>
+
+<!-- 遗嘱页面 -->
+<div id="will" class="page">
+    <div class="card">
+        <div class="card-title">
+            <span>遗嘱模板</span>
+            <button class="btn-edit" onclick="openWillEditor()">编辑</button>
+        </div>
+        <div id="willDisplay" class="will-text"></div>
+    </div>
+</div>
+
+<!-- 急救卡页面 -->
+<div id="emergency" class="page">
+    <div id="emergencyCardForImage" class="emergency-display"></div>
+    <button class="btn-edit-green" id="editEmergencyBtn">✏️ 编辑急救卡</button>
+    <button class="btn-photo" id="saveAsImageBtn">📸 生成图片并保存到手机</button>
+</div>
+
+<!-- 遗嘱编辑模态框 -->
+<div id="willModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>编辑遗嘱</span>
+            <button class="close-modal" onclick="closeWillModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <textarea id="willEditor" placeholder="编辑遗嘱内容..." style="min-height: 400px; font-family: monospace;"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-edit" onclick="closeWillModal()">取消</button>
+            <button class="btn-save" onclick="saveWillFromModal()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 急救卡编辑模态框 -->
+<div id="emergencyModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>编辑急救卡</span>
+            <button class="close-modal" onclick="closeEmergencyModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="emergencyModalBody"></div>
+        <div class="modal-footer">
+            <button class="btn-edit" onclick="closeEmergencyModal()">取消</button>
+            <button class="btn-save" onclick="saveEmergencyFromModal()">保存</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==================== 数据模型 ====================
+    let appData = {
+        categories: [
+            { name: "医疗意愿", items: [], notes: "" },
+            { name: "财产分配", items: [], notes: "" },
+            { name: "遗言", items: [], notes: "" },
+            { name: "葬礼安排", items: [], notes: "" },
+            { name: "悄悄话", items: [], notes: "" }   // 新增受保护分类
+        ],
+        currentCategory: 0,
+        willText: `遗嘱\n\n立遗嘱人：\n姓名：__________\n性别：__________\n身份证/护照号：__________\n住址：__________\n联系电话：__________\n\n声明：\n本人思维清晰、意识清楚，未受任何胁迫、欺诈或不当影响，自愿订立本遗嘱，对本人名下的合法财产作出如下处置。本遗嘱是本人真实意愿的表达。\n\n一、财产分配安排\n\n    房产（如有）\n        位于__________（地址）的房产（不动产权证号：__________），由（姓名，身份证号：__________）继承。\n        （如有多套，可逐条列出）\n\n    银行存款/理财产品（如有）\n        存放在__________银行（账号：__________）的存款及利息，由__________继承。\n        其他理财账户（如股票、基金等）：__________\n\n    车辆（如有）\n        品牌型号：__________，车牌号：__________，由__________继承。\n\n    公司股权/合伙份额（如有）\n        在__________公司持有的____%股权，由__________继承。\n\n    其他财产（如首饰、收藏品、知识产权等）\n        __________由__________继承。\n\n    剩余财产（未列明的其他合法财产）\n        由__________按____% : ____% 的比例分配（或写明全部留给某人）。\n\n二、债务处理\n本人遗留的合法债务，由各继承人按所继承财产的价值比例承担；若指定继承人放弃继承，则按法律规定处理。\n\n三、遗嘱执行人（可选）\n本人指定__________（姓名，身份证号：__________）为遗嘱执行人，负责本遗嘱的保管、启封及执行。\n（如不指定，可由继承人协商或法院指定）\n\n四、补充说明\n    本遗嘱一式____份，本人持____份，__________持____份，具有同等法律效力。\n    若本遗嘱内容与之前所立任何形式的遗嘱或遗赠扶养协议冲突，以本遗嘱为准。\n    对缺乏劳动能力又没有生活来源的继承人（如未成年子女、残疾子女等），本遗嘱已为其保留必要的遗产份额（如未保留，该部分条款可能无效）。\n\n五、签名与日期\n立遗嘱人签名：__________\n日期：____年__月__日\n\n见证人（建议2人以上，与继承人无利害关系）：\n    姓名：__________ 身份证号：__________ 签名：__________\n    姓名：__________ 身份证号：__________ 签名：__________\n\n（注：自书遗嘱可不需见证人，但需全程亲笔书写、签名并注明年月日；打印遗嘱、代书遗嘱、录音录像遗嘱、公证遗嘱各有形式要求，建议优先选择公证或律师见证）\n\n重要提示（法律效力关键点）\n    形式必须合法：\n        自书遗嘱：全文手写、签名、注明年月日。\n        代书遗嘱：2个以上无利害关系见证人，一人代书，立遗嘱人、代书人、见证人共同签名。\n        打印遗嘱：2个以上见证人，每页签名并注明年月日。\n        公证遗嘱：效力最强，流程最规范。\n    不得处分夫妻共同财产：\n        例如房产是夫妻共有，只能处置属于自己的一半份额。\n    必留份制度：\n        必须为"缺乏劳动能力又没有生活来源的继承人"（如残疾子女、年迈父母）保留必要份额，否则相关条款可能无效。\n    建议公证：\n        公证遗嘱在司法实践中争议最少，尤其当财产种类多、继承人关系复杂时。`,
+        emergencyCard: {
+            name: "", birthDate: "", gender: "", idNumber: "",
+            bloodType: "", allergies: "", medicalHistory: "", surgeryImplants: "",
+            longTermMedications: "", specialNeeds: "",
+            emergencyContacts: [{ name: "", relation: "", phone: "" }],
+            doctor: "", address: "", insuranceInfo: "", updateDate: ""
+        }
+    };
+
+    // 悄悄话密码存储
+    let secretUnlocked = false;      // 当前会话是否已解锁悄悄话（每次切换分类都会重置）
+    let secretCategoryIndex = 4;     // 悄悄话在 categories 中的索引（0-based）
+
+    function getCurrentDate() {
+        const d = new Date();
+        return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
+    }
+
+    function loadData() {
+        const saved = localStorage.getItem("after_death_app");
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed.categories) {
+                    // 确保悄悄话分类存在
+                    let hasSecret = parsed.categories.some(c => c.name === "悄悄话");
+                    if (!hasSecret) {
+                        parsed.categories.push({ name: "悄悄话", items: [], notes: "" });
+                    }
+                    appData.categories = parsed.categories;
+                }
+                if (parsed.currentCategory !== undefined) appData.currentCategory = parsed.currentCategory;
+                if (parsed.willText) appData.willText = parsed.willText;
+                if (parsed.emergencyCard) {
+                    if (!parsed.emergencyCard.emergencyContacts) {
+                        parsed.emergencyCard.emergencyContacts = [{ name: "", relation: "", phone: "" }];
+                    }
+                    appData.emergencyCard = parsed.emergencyCard;
+                }
+            } catch(e) {}
+        }
+        // 确保悄悄话分类在数组最后且索引正确
+        const secretIdx = appData.categories.findIndex(c => c.name === "悄悄话");
+        if (secretIdx === -1) {
+            appData.categories.push({ name: "悄悄话", items: [], notes: "" });
+            secretCategoryIndex = appData.categories.length - 1;
+        } else {
+            secretCategoryIndex = secretIdx;
+        }
+        // 确保每个分类都有 items 和 notes，兼容旧数据补充note字段
+        appData.categories.forEach(cat => {
+            if (!cat.items) cat.items = [];
+            // 给每个待办项补充记事本字段，兼容旧数据
+            cat.items.forEach(item => {
+                if (item.note === undefined) item.note = '';
+            });
+            if (cat.notes === undefined) cat.notes = "";
+        });
+        if (!appData.emergencyCard.emergencyContacts || appData.emergencyCard.emergencyContacts.length === 0) {
+            appData.emergencyCard.emergencyContacts = [{ name: "", relation: "", phone: "" }];
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem("after_death_app", JSON.stringify({
+            categories: appData.categories,
+            currentCategory: appData.currentCategory,
+            willText: appData.willText,
+            emergencyCard: appData.emergencyCard
+        }));
+    }
+
+    // ==================== 悄悄话密码相关 ====================
+    function isSecretPasswordSet() {
+        return localStorage.getItem("secret_password") !== null;
+    }
+
+    function setSecretPassword(pwd) {
+        // 简单存储 base64 编码
+        localStorage.setItem("secret_password", btoa(pwd));
+    }
+
+    function verifySecretPassword(pwd) {
+        const stored = localStorage.getItem("secret_password");
+        if (!stored) return false;
+        return btoa(pwd) === stored;
+    }
+
+    // 解锁悄悄话，返回是否成功
+    async function unlockSecretCategory() {
+        if (!isSecretPasswordSet()) {
+            // 第一次使用，设置密码
+            const pwd1 = prompt("🔒 首次使用「悄悄话」分类，请设置密码：", "");
+            if (!pwd1) return false;
+            const pwd2 = prompt("请再次输入密码确认：", "");
+            if (pwd1 !== pwd2) {
+                alert("两次密码不一致，设置失败。");
+                return false;
+            }
+            if (pwd1.length < 4) {
+                alert("密码长度至少4位，请重新设置。");
+                return false;
+            }
+            setSecretPassword(pwd1);
+            alert("密码设置成功！以后每次进入「悄悄话」都需要输入密码。");
+            secretUnlocked = true;
+            return true;
+        } else {
+            // 已有密码，验证
+            const pwd = prompt("请输入「悄悄话」密码：", "");
+            if (pwd === null) return false;
+            if (verifySecretPassword(pwd)) {
+                secretUnlocked = true;
+                return true;
+            } else {
+                alert("密码错误！");
+                secretUnlocked = false;
+                return false;
+            }
+        }
+    }
+
+    // 修改密码
+    async function changeSecretPassword() {
+        if (!isSecretPasswordSet()) {
+            alert("尚未设置密码，请先使用悄悄话功能设置密码。");
+            return;
+        }
+        const oldPwd = prompt("请输入原密码：", "");
+        if (!oldPwd || !verifySecretPassword(oldPwd)) {
+            alert("原密码错误！");
+            return;
+        }
+        const newPwd1 = prompt("请输入新密码（至少4位）：", "");
+        if (!newPwd1 || newPwd1.length < 4) {
+            alert("密码长度不足4位，修改取消。");
+            return;
+        }
+        const newPwd2 = prompt("请再次输入新密码：", "");
+        if (newPwd1 !== newPwd2) {
+            alert("两次密码不一致，修改取消。");
+            return;
+        }
+        setSecretPassword(newPwd1);
+        alert("密码修改成功！");
+        // 修改后当前解锁状态失效，强制重新验证
+        secretUnlocked = false;
+        // 刷新当前分类（如果是悄悄话，会重新要求密码）
+        if (appData.currentCategory === secretCategoryIndex) {
+            renderCurrentCategoryContent();
+        }
+    }
+
+    // 渲染当前分类的内容（根据是否解锁悄悄话）
+    async function renderCurrentCategoryContent() {
+        const isSecret = (appData.currentCategory === secretCategoryIndex);
+        if (isSecret && !secretUnlocked) {
+            // 显示锁定界面
+            document.getElementById("todoList").innerHTML = `
+                <div class="lock-overlay">
+                    🔒 此分类已加密<br>
+                    <button onclick="attemptUnlockAndRender()">输入密码</button>
+                </div>`;
+            document.getElementById("notesDisplay").innerHTML = "";
+            // 隐藏操作按钮
+            document.getElementById("addTodoBtn").style.display = "none";
+            document.getElementById("editNotesBtn").style.display = "none";
+            document.getElementById("changePwdBtn").style.display = "none";
+            return;
+        }
+        // 正常渲染
+        document.getElementById("addTodoBtn").style.display = "inline-block";
+        document.getElementById("editNotesBtn").style.display = "inline-block";
+        if (isSecret) {
+            document.getElementById("changePwdBtn").style.display = "inline-block";
+        } else {
+            document.getElementById("changePwdBtn").style.display = "none";
+        }
+        renderTodoList();
+        renderNotes();
+    }
+
+    async function attemptUnlockAndRender() {
+        const ok = await unlockSecretCategory();
+        if (ok) {
+            renderCurrentCategoryContent();
+        } else {
+            // 保持锁定
+        }
+    }
+
+    // ==================== 备忘录功能 ====================
+    function renderCategoryTabs() {
+        const container = document.getElementById("categoryTabs");
+        container.innerHTML = appData.categories.map((cat, idx) => {
+            let lockIcon = (cat.name === "悄悄话") ? ' 🔒' : '';
+            return `<div class="category-tab ${idx === appData.currentCategory ? 'active' : ''}" onclick="switchCategory(${idx})">${escapeHtml(cat.name)}${lockIcon}</div>`;
+        }).join("");
+    }
+
+    async function switchCategory(idx) {
+        // 如果切换到悄悄话且当前未解锁，先重置解锁状态（确保每次进入都需验证）
+        if (idx === secretCategoryIndex) {
+            secretUnlocked = false;
+        }
+        appData.currentCategory = idx;
+        renderCategoryTabs();
+        // 渲染内容（可能会触发密码验证）
+        await renderCurrentCategoryContent();
+        saveData();
+    }
+
+    // 重写：带记事本的待办列表渲染
+    function renderTodoList() {
+        const category = appData.categories[appData.currentCategory];
+        const container = document.getElementById("todoList");
+        if (!category.items.length) {
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">暂无待办事项，点击 + 添加</div>';
+            return;
+        }
+        container.innerHTML = category.items.map((item, idx) => `
+            <div class="todo-item">
+                <div class="todo-item-main">
+                    <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleTodo(${idx})">
+                    <button class="todo-note-toggle" onclick="toggleTodoNote(${idx})" title="打开记事本">📝</button>
+                    <span class="todo-text ${item.done ? 'done' : ''}">${escapeHtml(item.text)}</span>
+                    <button class="delete-todo" onclick="deleteTodo(${idx})">🗑️</button>
+                </div>
+                <div class="todo-note-wrapper" id="todoNoteWrapper_${idx}">
+                    <textarea 
+                        class="todo-note-textarea" 
+                        placeholder="在这里写下详细记录、补充说明、私密备忘..."
+                        onblur="saveTodoNote(${idx}, this.value)"
+                    >${escapeHtml(item.note || '')}</textarea>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    // 新增：展开/收起待办记事本
+    function toggleTodoNote(idx) {
+        const wrapper = document.getElementById(`todoNoteWrapper_${idx}`);
+        wrapper.classList.toggle('active');
+    }
+
+    // 新增：保存待办记事本内容
+    function saveTodoNote(idx, content) {
+        const category = appData.categories[appData.currentCategory];
+        category.items[idx].note = content;
+        saveData();
+    }
+
+    function renderNotes() {
+        const notes = appData.categories[appData.currentCategory].notes;
+        document.getElementById("notesDisplay").innerHTML = notes ? escapeHtml(notes).replace(/\n/g, '<br>') : '<span style="color: #aaa;">点击编辑按钮添加备注...</span>';
+    }
+
+    // 修改：新增待办时初始化记事本字段
+    function addTodoItem() {
+        const category = appData.categories[appData.currentCategory];
+        const text = prompt("请输入待办事项:");
+        if (text && text.trim()) {
+            category.items.push({ text: text.trim(), done: false, note: '' });
+            renderTodoList();
+            saveData();
+        }
+    }
+
+    function toggleTodo(idx) {
+        const category = appData.categories[appData.currentCategory];
+        category.items[idx].done = !category.items[idx].done;
+        renderTodoList();
+        saveData();
+    }
+
+    function deleteTodo(idx) {
+        if (confirm("确定删除吗？")) {
+            const category = appData.categories[appData.currentCategory];
+            category.items.splice(idx, 1);
+            renderTodoList();
+            saveData();
+        }
+    }
+
+    function editNotes() {
+        const category = appData.categories[appData.currentCategory];
+        const currentNotes = category.notes;
+        const newNotes = prompt("编辑备注:", currentNotes);
+        if (newNotes !== null) {
+            category.notes = newNotes;
+            renderNotes();
+            saveData();
+        }
+    }
+
+    // ==================== 遗嘱功能 ====================
+    function renderWill() {
+        document.getElementById("willDisplay").innerHTML = escapeHtml(appData.willText).replace(/\n/g, '<br>');
+    }
+
+    function openWillEditor() {
+        const modal = document.getElementById("willModal");
+        const textarea = document.getElementById("willEditor");
+        textarea.value = appData.willText;
+        modal.classList.add("active");
+        setTimeout(() => textarea.focus(), 100);
+    }
+
+    function closeWillModal() {
+        document.getElementById("willModal").classList.remove("active");
+    }
+
+    function saveWillFromModal() {
+        const newText = document.getElementById("willEditor").value;
+        if (newText !== null) {
+            appData.willText = newText;
+            renderWill();
+            saveData();
+        }
+        closeWillModal();
+    }
+
+    // ==================== 急救卡功能 ====================
+    function renderEmergencyCard() {
+        const e = appData.emergencyCard;
+        const container = document.getElementById("emergencyCardForImage");
+        
+        const formatDate = (d) => d ? d : '—';
+        let contactsHtml = '';
+        if (e.emergencyContacts && e.emergencyContacts.length) {
+            e.emergencyContacts.forEach((c, idx) => {
+                if (c.name || c.relation || c.phone) {
+                    contactsHtml += `<div class="emergency-contact-item"><strong>${escapeHtml(c.name || '—')}</strong> (${escapeHtml(c.relation || '关系')}) : ${escapeHtml(c.phone || '—')}</div>`;
+                } else if (idx === 0 && !c.name && !c.relation && !c.phone) {
+                    contactsHtml = '<div>—</div>';
+                }
+            });
+            if (!contactsHtml) contactsHtml = '<div>—</div>';
+        } else {
+            contactsHtml = '<div>—</div>';
+        }
+        
+        container.innerHTML = `
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="font-size: 28px;">🚑 急救信息卡</h2>
+                <div style="width: 50px; height: 3px; background: #2C3E50; margin: 10px auto;"></div>
+                ${e.updateDate ? `<div style="font-size: 14px; color: #888;">最后更新：${escapeHtml(e.updateDate)}</div>` : ''}
+            </div>
+            <div class="emergency-section">
+                <div class="emergency-section-title">📋 个人基础信息</div>
+                <div class="emergency-row"><div class="emergency-label">姓名</div><div class="emergency-value">${escapeHtml(e.name) || '—'}</div></div>
+                <div class="emergency-row"><div class="emergency-label">出生日期</div><div class="emergency-value">${formatDate(e.birthDate)}</div></div>
+                <div class="emergency-row"><div class="emergency-label">性别</div><div class="emergency-value">${escapeHtml(e.gender) || '—'}</div></div>
+                <div class="emergency-row"><div class="emergency-label">身份证件号</div><div class="emergency-value">${escapeHtml(e.idNumber) || '—'}</div></div>
+            </div>
+            <div class="emergency-section">
+                <div class="emergency-section-title">🩺 关键医疗信息</div>
+                <div class="emergency-row"><div class="emergency-label">血型</div><div class="emergency-value">${escapeHtml(e.bloodType) || '—'}</div></div>
+                <div class="emergency-row"><div class="emergency-label">过敏史</div><div class="emergency-value">${escapeHtml(e.allergies) || '—'}</div></div>
+                <div class="emergency-row"><div class="emergency-label">重大疾病史</div><div class="emergency-value">${escapeHtml(e.medicalHistory) || '—'}</div></div>
+                <div class="emergency-row"><div class="emergency-label">手术史/体内植入物</div><div class="emergency-value">${escapeHtml(e.surgeryImplants) || '—'}</div></div>
+                <div class="emergency-row"><div class="emergency-label">长期用药情况</div><div class="emergency-value">${escapeHtml(e.longTermMedications) || '—'}</div></div>
+                <div class="emergency-row"><div class="emergency-label">特殊需求</div><div class="emergency-value">${escapeHtml(e.specialNeeds) || '—'}</div></div>
+            </div>
+            <div class="emergency-section">
+                <div class="emergency-section-title">📞 紧急联系信息</div>
+                <div class="emergency-row"><div class="emergency-label">紧急联系人</div><div class="emergency-value">${contactsHtml}</div></div>
+                <div class="emergency-row"><div class="emergency-label">主治医生</div><div class="emergency-value">${escapeHtml(e.doctor) || '—'}</div></div>
+            </div>
+            <div class="emergency-section">
+                <div class="emergency-section-title">📍 其他辅助信息</div>
+                <div class="emergency-row"><div class="emergency-label">家庭详细地址</div><div class="emergency-value">${escapeHtml(e.address) || '—'}</div></div>
+                <div class="emergency-row"><div class="emergency-label">医保信息</div><div class="emergency-value">${escapeHtml(e.insuranceInfo) || '—'}</div></div>
+            </div>
+            <div class="warning-banner">⚠️ 紧急情况请直接展示本屏幕给急救人员</div>
+        `;
+    }
+    
+    function openEmergencyEditor() {
+        const modal = document.getElementById("emergencyModal");
+        const modalBody = document.getElementById("emergencyModalBody");
+        const e = appData.emergencyCard;
+        
+        if (!e.emergencyContacts || e.emergencyContacts.length === 0) {
+            e.emergencyContacts = [{ name: "", relation: "", phone: "" }];
+        }
+        
+        let contactsHtml = '';
+        e.emergencyContacts.forEach((contact, idx) => {
+            contactsHtml += `
+                <div class="contact-group" data-contact-idx="${idx}">
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" class="contact-name" value="${escapeHtml(contact.name)}" placeholder="例如：张三">
+                    </div>
+                    <div class="form-group">
+                        <label>关系</label>
+                        <input type="text" class="contact-relation" value="${escapeHtml(contact.relation)}" placeholder="例如：配偶">
+                    </div>
+                    <div class="form-group">
+                        <label>电话</label>
+                        <input type="tel" class="contact-phone" value="${escapeHtml(contact.phone)}" placeholder="手机号码">
+                    </div>
+                    ${e.emergencyContacts.length > 1 ? `<button type="button" class="contact-remove" onclick="removeContact(${idx})">删除此联系人</button>` : ''}
+                </div>
+            `;
+        });
+        
+        modalBody.innerHTML = `
+            <form id="emergencyForm">
+                <div class="emergency-section-title">📋 个人基础信息</div>
+                <div class="form-group"><label>姓名</label><input type="text" id="e_name" value="${escapeHtml(e.name)}" placeholder="全名"></div>
+                <div class="form-group"><label>出生日期</label><input type="date" id="e_birthDate" value="${e.birthDate || ''}"></div>
+                <div class="form-group"><label>性别</label>
+                    <select id="e_gender">
+                        <option value="" ${!e.gender ? 'selected' : ''}>— 请选择 —</option>
+                        <option value="男" ${e.gender === '男' ? 'selected' : ''}>男</option>
+                        <option value="女" ${e.gender === '女' ? 'selected' : ''}>女</option>
+                        <option value="其他" ${e.gender === '其他' ? 'selected' : ''}>其他</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>身份证件号</label><input type="text" id="e_idNumber" value="${escapeHtml(e.idNumber)}" placeholder="身份证/护照号"></div>
+                
+                <div class="emergency-section-title" style="margin-top: 16px;">🩺 关键医疗信息</div>
+                <div class="form-group"><label>血型</label><input type="text" id="e_bloodType" value="${escapeHtml(e.bloodType)}" placeholder="例如：A+、O-"></div>
+                <div class="form-group"><label>过敏史</label><textarea id="e_allergies" placeholder="药物/食物/其他过敏，如青霉素、花生">${escapeHtml(e.allergies)}</textarea></div>
+                <div class="form-group"><label>重大疾病史</label><textarea id="e_medicalHistory" placeholder="高血压、冠心病、糖尿病等">${escapeHtml(e.medicalHistory)}</textarea></div>
+                <div class="form-group"><label>手术史与体内植入物</label><textarea id="e_surgeryImplants" placeholder="过往手术、心脏起搏器、钢板等">${escapeHtml(e.surgeryImplants)}</textarea></div>
+                <div class="form-group"><label>长期用药情况</label><textarea id="e_longTermMedications" placeholder="药物名称和剂量">${escapeHtml(e.longTermMedications)}</textarea></div>
+                <div class="form-group"><label>特殊需求</label><textarea id="e_specialNeeds" placeholder="助听器、视力障碍等">${escapeHtml(e.specialNeeds)}</textarea></div>
+                
+                <div class="emergency-section-title" style="margin-top: 16px;">📞 紧急联系信息</div>
+                <div id="contactsContainer">${contactsHtml}</div>
+                <button type="button" class="btn-add-contact" onclick="addContactField()">+ 添加另一位联系人</button>
+                
+                <div class="form-group" style="margin-top: 12px;"><label>主治医生</label><input type="text" id="e_doctor" value="${escapeHtml(e.doctor)}" placeholder="姓名及联系方式"></div>
+                
+                <div class="emergency-section-title" style="margin-top: 16px;">📍 其他辅助信息</div>
+                <div class="form-group"><label>家庭详细地址</label><textarea id="e_address" placeholder="常住地址">${escapeHtml(e.address)}</textarea></div>
+                <div class="form-group"><label>医保信息</label><input type="text" id="e_insuranceInfo" value="${escapeHtml(e.insuranceInfo)}" placeholder="医保类型及卡号"></div>
+            </form>
+        `;
+        
+        modal.classList.add("active");
+    }
+    
+    function addContactField() {
+        appData.emergencyCard.emergencyContacts.push({ name: "", relation: "", phone: "" });
+        openEmergencyEditor();
+    }
+    
+    function removeContact(idx) {
+        if (appData.emergencyCard.emergencyContacts.length > 1) {
+            appData.emergencyCard.emergencyContacts.splice(idx, 1);
+            openEmergencyEditor();
+        }
+    }
+    
+    function saveEmergencyFromModal() {
+        const newName = document.getElementById("e_name")?.value || "";
+        const newBirthDate = document.getElementById("e_birthDate")?.value || "";
+        const newGender = document.getElementById("e_gender")?.value || "";
+        const newIdNumber = document.getElementById("e_idNumber")?.value || "";
+        const newBloodType = document.getElementById("e_bloodType")?.value || "";
+        const newAllergies = document.getElementById("e_allergies")?.value || "";
+        const newMedicalHistory = document.getElementById("e_medicalHistory")?.value || "";
+        const newSurgeryImplants = document.getElementById("e_surgeryImplants")?.value || "";
+        const newLongTermMedications = document.getElementById("e_longTermMedications")?.value || "";
+        const newSpecialNeeds = document.getElementById("e_specialNeeds")?.value || "";
+        const newDoctor = document.getElementById("e_doctor")?.value || "";
+        const newAddress = document.getElementById("e_address")?.value || "";
+        const newInsuranceInfo = document.getElementById("e_insuranceInfo")?.value || "";
+        
+        const contactGroups = document.querySelectorAll("#contactsContainer .contact-group");
+        const newContacts = [];
+        contactGroups.forEach(group => {
+            const name = group.querySelector(".contact-name")?.value || "";
+            const relation = group.querySelector(".contact-relation")?.value || "";
+            const phone = group.querySelector(".contact-phone")?.value || "";
+            newContacts.push({ name, relation, phone });
+        });
+        if (newContacts.length === 0) newContacts.push({ name: "", relation: "", phone: "" });
+        
+        appData.emergencyCard = {
+            name: newName, birthDate: newBirthDate, gender: newGender, idNumber: newIdNumber,
+            bloodType: newBloodType, allergies: newAllergies, medicalHistory: newMedicalHistory,
+            surgeryImplants: newSurgeryImplants, longTermMedications: newLongTermMedications,
+            specialNeeds: newSpecialNeeds, emergencyContacts: newContacts, doctor: newDoctor,
+            address: newAddress, insuranceInfo: newInsuranceInfo, updateDate: getCurrentDate()
+        };
+        
+        saveData();
+        renderEmergencyCard();
+        closeEmergencyModal();
+    }
+    
+    function closeEmergencyModal() {
+        document.getElementById("emergencyModal").classList.remove("active");
+    }
+
+    // ==================== 生成图片 ====================
+    async function saveEmergencyCardAsImage() {
+        const element = document.getElementById("emergencyCardForImage");
+        if (!element) return;
+        
+        const btn = document.getElementById("saveAsImageBtn");
+        const originalText = btn.innerText;
+        btn.innerText = "生成中...";
+        btn.disabled = true;
+        
+        try {
+            const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff', logging: false });
+            const imageData = canvas.toDataURL("image/png");
+            const link = document.createElement('a');
+            const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
+            link.download = `emergency_card_${timestamp}.png`;
+            link.href = imageData;
+            link.click();
+            
+            setTimeout(() => {
+                alert("如果图片未自动保存，请长按图片保存到手机。\n（图片已在新标签页打开）");
+                const win = window.open();
+                win.document.write(`<img src="${imageData}" style="width:100%;" alt="急救卡" />`);
+                win.document.title = "急救卡图片 - 长按保存";
+            }, 500);
+        } catch (error) {
+            console.error(error);
+            alert("生成图片失败，请重试。");
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // ==================== 页面切换 ====================
+    async function switchPage(pageId) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        
+        document.querySelectorAll('.nav-item').forEach(item => {
+            if (item.dataset.page === pageId) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+        
+        if (pageId === 'memo') {
+            renderCategoryTabs();
+            await renderCurrentCategoryContent();
+        } else if (pageId === 'will') {
+            renderWill();
+        } else if (pageId === 'emergency') {
+            renderEmergencyCard();
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return text.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // ==================== 初始化 ====================
+    loadData();
+    
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => switchPage(item.dataset.page));
+    });
+    
+    renderCategoryTabs();
+    renderCurrentCategoryContent();  // 初始渲染可能要求密码（如果默认选中悄悄话）
+    renderWill();
+    renderEmergencyCard();
+    
+    document.getElementById("editEmergencyBtn").addEventListener("click", openEmergencyEditor);
+    document.getElementById("saveAsImageBtn").addEventListener("click", saveEmergencyCardAsImage);
+</script>
+</body>
+</html>
